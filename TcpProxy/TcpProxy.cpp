@@ -29,8 +29,30 @@ void _stdcall tunnel(SOCKET client) {
     fd_set fd;
     FD_ZERO(&fd);
     if (connect_target(ip_remote, port_remote, remote) == -1) { return; }
+    char buff[4096];
+    int e;
+    while (1) {
+        FD_SET(remote,&fd);
+        FD_SET(client,&fd);
+        if (FD_ISSET(remote, &fd)) {
+            
+            e = recv(remote, buff, sizeof(buff), 0);
+            send(client, buff, e, 0);
+            if (e <= 0) { break; }
+
+        }
+        if (FD_ISSET(client, &fd)) {
+
+            e = recv(client, buff, sizeof(buff), 0);
+            send(remote, buff, e, 0);
+            if (e <= 0) { break; }
 
 
+        }
+
+
+
+    }
 
 
 
@@ -77,8 +99,14 @@ int main(int argc, char* argv[])
     SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
     if (s == -1) { return -2; }
 
-    bind(s, (const sockaddr*)&inf, sizeof(inf));
-    listen(s, 5);
+    if (bind(s, (const sockaddr*)&inf, sizeof(inf)) == -1) {
+        return -3;;
+    }
+
+    if (listen(s, 5) == -1) {
+        return -4;
+    }
+
 
     while (1) {
 
