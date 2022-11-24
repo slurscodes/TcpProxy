@@ -2,17 +2,89 @@
 //
 
 #include <iostream>
+#include<WinSock2.h>
+#include<Windows.h>
+#include<WS2tcpip.h>
+#include<string>
+
+#pragma comment(lib,"Ws2_32")
+using namespace std;
 
 
+char* ip_remote;
+
+
+void connexion(SOCKET client){}
 
 void usage() {
+
+    cout << "TcpProxy.exe ip_interface port remote_ip remote_port\n";
+
+}
+
+
+
+void _stdcall tunnel(SOCKET client) {
+    SOCKET remote;
+    fd_set fd;
+    FD_ZERO(&fd);
+
 
 
 
 }
+
+int connect_target(char* ip, int port,SOCKET remote) {
+
+    remote = socket(AF_INET, SOCK_STREAM, 0);
+    if (remote == -1) { return -1; }
+
+    SOCKADDR_IN inf = { sizeof(inf) };
+    inf.sin_family = AF_INET;
+    inf.sin_port = htons(port);
+
+    inet_pton(AF_INET, ip, &inf.sin_addr.s_addr);
+
+    if (connect(remote, (const sockaddr*)&inf, sizeof(inf)) == SOCKET_ERROR) { closesocket(remote); return -1; }
+
+    return 0;
+}
+
 int main(int argc, char* argv[])
 {
+    cout << "TcpProxy By F3di006\n";
     if (argc < 2) { usage(); return 0; }
+
+
+    if (connect_target(argv[3], stoi(argv[4])) == -1) { cout << "Error connecting to remote host\n"; return -1; }
+
+
+
+    WSADATA d;
+    SOCKADDR_IN inf = { sizeof(inf) };
+    inf.sin_port = htons((u_short)stoi(argv[2]));
+    inf.sin_family = AF_INET;
+    if (!inet_pton(AF_INET, argv[1], &inf.sin_addr.s_addr)) { return -3; }
+
+
+    if (WSAStartup(MAKEWORD(2, 0), &d)) { return -1; }
+
+    SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
+    if (s == -1) { return -2; }
+
+    bind(s, (const sockaddr*)&inf, sizeof(inf));
+    listen(s, 5);
+
+    while (1) {
+
+        SOCKET client = accept(s, NULL, NULL);
+
+
+
+    }
+
+
+    
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
