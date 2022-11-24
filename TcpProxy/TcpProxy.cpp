@@ -12,7 +12,7 @@ using namespace std;
 
 
 char* ip_remote;
-
+int port_remote;
 
 void connexion(SOCKET client){}
 
@@ -28,13 +28,17 @@ void _stdcall tunnel(SOCKET client) {
     SOCKET remote;
     fd_set fd;
     FD_ZERO(&fd);
+    if (connect_target(ip_remote, port_remote, remote) == -1) { return; }
+
+
+
 
 
 
 
 }
 
-int connect_target(char* ip, int port,SOCKET remote) {
+__forceinline int connect_target(char* ip, int port,SOCKET remote) {
 
     remote = socket(AF_INET, SOCK_STREAM, 0);
     if (remote == -1) { return -1; }
@@ -56,7 +60,8 @@ int main(int argc, char* argv[])
     if (argc < 2) { usage(); return 0; }
 
 
-    if (connect_target(argv[3], stoi(argv[4])) == -1) { cout << "Error connecting to remote host\n"; return -1; }
+    ip_remote = argv[3];
+    port_remote = stoi(argv[4]);
 
 
 
