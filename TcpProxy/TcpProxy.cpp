@@ -14,21 +14,35 @@ using namespace std;
 char* ip_remote;
 int port_remote;
 
-void connexion(SOCKET client){}
+
 
 void usage() {
 
     cout << "TcpProxy.exe ip_interface port remote_ip remote_port\n";
 
 }
+__forceinline int connect_target(char* ip, int port, SOCKET *remote) {
 
+    *remote = socket(AF_INET, SOCK_STREAM, 0);
+    if (*remote == -1) { return -1; }
+
+    SOCKADDR_IN inf = { sizeof(inf) };
+    inf.sin_family = AF_INET;
+    inf.sin_port = htons(port);
+
+    inet_pton(AF_INET, ip, &inf.sin_addr.s_addr);
+
+    if (connect(*remote, (const sockaddr*)&inf, sizeof(inf)) == SOCKET_ERROR) { closesocket(*remote); return -1; }
+
+    return 0;
+}
 
 
 void _stdcall tunnel(SOCKET client) {
     SOCKET remote;
     fd_set fd;
     FD_ZERO(&fd);
-    if (connect_target(ip_remote, port_remote, remote) == -1) { return; }
+    if (connect_target(ip_remote, port_remote, &remote)) { return; }
     char buff[4096];
     int e;
     while (1) {
@@ -53,6 +67,9 @@ void _stdcall tunnel(SOCKET client) {
 
 
     }
+    closesocket(client);
+    closesocket(remote);
+    return;
 
 
 
@@ -60,21 +77,7 @@ void _stdcall tunnel(SOCKET client) {
 
 }
 
-__forceinline int connect_target(char* ip, int port,SOCKET remote) {
 
-    remote = socket(AF_INET, SOCK_STREAM, 0);
-    if (remote == -1) { return -1; }
-
-    SOCKADDR_IN inf = { sizeof(inf) };
-    inf.sin_family = AF_INET;
-    inf.sin_port = htons(port);
-
-    inet_pton(AF_INET, ip, &inf.sin_addr.s_addr);
-
-    if (connect(remote, (const sockaddr*)&inf, sizeof(inf)) == SOCKET_ERROR) { closesocket(remote); return -1; }
-
-    return 0;
-}
 
 int main(int argc, char* argv[])
 {
@@ -107,10 +110,14 @@ int main(int argc, char* argv[])
         return -4;
     }
 
-
+    HANDLE th;
     while (1) {
-
+        cout << "waiting for client on localport\n";
         SOCKET client = accept(s, NULL, NULL);
+        cout << "accepted!\nforwarding...\n";
+        th = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)tunnel, (LPVOID)client, 0, 0);
+        CloseHandle(th);
+
 
 
 
