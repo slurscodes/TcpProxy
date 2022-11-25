@@ -6,11 +6,13 @@
 #include<Windows.h>
 #include<WS2tcpip.h>
 #include<string>
+#include <mutex>
+#include<fstream>
 
 #pragma comment(lib,"Ws2_32")
 using namespace std;
 
-
+mutex m; //log file
 char* ip_remote;
 int port_remote;
 
@@ -38,6 +40,34 @@ __forceinline int connect_target(char* ip, int port, SOCKET *remote) {
 }
 
 
+void logs(SOCKET client) {
+
+    //get ip client port client + get time and date
+    struct tm newtime;
+    std::time_t t = std::time(0);
+    localtime_s(&newtime, &t);
+    string text;
+    SOCKADDR_IN d = { sizeof(d) };
+    int len = sizeof(d);
+    if (getsockname(client, (sockaddr*)&d, &len)) {
+        return;
+    }
+    char ip[18];
+    if (inet_ntop(AF_INET, &d.sin_addr, ip, sizeof(ip)) == NULL) { return; }
+    text = ip;
+    text = text + ":" + to_string(ntohs(d.sin_port)) + " ";
+    text = text+to_string((newtime.tm_mon + 1)) + "/" + to_string(newtime.tm_mday) + "/" + to_string((newtime.tm_year + 1900)) + " " + to_string(newtime.tm_hour) + ":" + to_string(newtime.tm_min) + ":" + to_string(newtime.tm_sec) + "\n";
+    m.lock();
+    fstream f;
+    f.open("logs.txt", ios::app);
+    f.write(text.c_str(), text.length());
+    f.close();
+
+
+    m.unlock();
+
+}
+
 void _stdcall tunnel(SOCKET client) {
     SOCKET remote;
     fd_set fd;
@@ -45,6 +75,7 @@ void _stdcall tunnel(SOCKET client) {
     if (connect_target(ip_remote, port_remote, &remote)) { return; }
     char buff[4096];
     int e;
+    logs(client);
     while (1) {
         FD_SET(remote,&fd);
         FD_SET(client,&fd);
@@ -117,7 +148,8 @@ int main(int argc, char* argv[])
         SOCKET client = accept(s, NULL, NULL);
         cout << "accepted!\nforwarding...\n";
         th = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)tunnel, (LPVOID)client, 0, 0);
-        CloseHandle(th);
+        if (th) { CloseHandle(th); }
+        else { closesocket(client); }
 
 
 
