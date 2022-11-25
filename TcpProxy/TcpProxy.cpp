@@ -114,7 +114,7 @@ void _stdcall tunnel(SOCKET client) {
 int main(int argc, char* argv[])
 {
     cout << "TcpProxy By F3di006\n";
-    if (argc < 2) { usage(); return 0; }
+    if (argc < 5) { usage(); return 0; }
 
 
     ip_remote = argv[3];
