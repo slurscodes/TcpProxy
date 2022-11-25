@@ -48,6 +48,7 @@ void _stdcall tunnel(SOCKET client) {
     while (1) {
         FD_SET(remote,&fd);
         FD_SET(client,&fd);
+        select(1, &fd, NULL, NULL, NULL);
         if (FD_ISSET(remote, &fd)) {
             
             e = recv(remote, buff, sizeof(buff), 0);
